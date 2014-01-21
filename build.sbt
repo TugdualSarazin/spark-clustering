@@ -1,25 +1,32 @@
+import AssemblyKeys._
 
-organization := "org.altic"
+assemblySettings
+
+organization := "org.altic.spark.clustering"
 
 name := "spark-clustering"
 
-//version := "0.7"
-version := "0.7.3-SNAPSHOT"
-//version := "0.8-SNAPSHOT"
-//version := "0.6.2"
+version := "0.8.1-SNAPSHOT"
 
-//scalaVersion := "2.9.2"
 scalaVersion := "2.9.3"
-//scalaVersion := "2.10.0"
 
-//libraryDependencies += "org.spark-project" %% "spark-core" % "0.6.2"
-//libraryDependencies += "org.spark-project" %% "spark-core" % "0.7.0"
-libraryDependencies += "org.spark-project" %% "spark-core" % "0.7.3-SNAPSHOT"
-//libraryDependencies += "org.spark-project" %% "spark-core" % "0.8.0-SNAPSHOT"
+libraryDependencies ++= Seq(
+  ("org.apache.spark" %% "spark-core" % "0.8.1-incubating").
+    exclude("org.mortbay.jetty", "servlet-api").
+    exclude("commons-beanutils", "commons-beanutils-core").
+    exclude("commons-collections", "commons-collections").
+    exclude("commons-collections", "commons-collections").
+    exclude("com.esotericsoftware.minlog", "minlog")
+)
 
-resolvers ++= Seq(
-		"Akka Repository" at "http://repo.akka.io/releases/",
-		"Spray Repository" at "http://repo.spray.cc/")
+mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+  {
+    case PathList("about.html") => MergeStrategy.rename
+    case x => old(x)
+  }
+}
+
+resolvers += "Akka Repository" at "http://repo.akka.io/releases/"
 
 publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
 
