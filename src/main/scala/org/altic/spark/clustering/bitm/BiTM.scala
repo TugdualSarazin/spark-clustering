@@ -7,8 +7,8 @@ import java.util.Random
 import scala.{Serializable, Int}
 import scala.math.abs
 import scala.Predef._
-import scala.collection.mutable.Stack
 import org.altic.spark.clustering.utils.{Matrix, NamedVector}
+import scala.collection.mutable
 
 // TODO : Assigner les lignes dans le calcul des colonnes (utilisation de RDD[Vector] à la place RDD[AffectedVector])
 // TODO: Check if ArraySeq is the best container
@@ -26,12 +26,12 @@ class BiTM(val nbRowNeuron: Int, val nbColNeuron: Int, datas: RDD[NamedVector], 
   private var _colNeuronAffectation = Array.tabulate(_nbDataCol){i => _rand.nextInt(_nbNeurons)}
   private var _neuronMatrix = initNeurons(_nbNeurons)
 
-  val quantErrors = new Stack[Double]
+  val quantErrors = new mutable.Stack[Double]
 
   protected def initNeurons(nbNeurons: Int) = {
 
     val rand = new Random()
-    val samples = datas.takeSample(false, nbNeurons, rand.nextInt())
+    val samples = datas.takeSample(withReplacement = false, nbNeurons, rand.nextInt())
 
     new Matrix(samples.map{samp =>
       Array.tabulate(nbNeurons){i =>
@@ -65,8 +65,6 @@ class BiTM(val nbRowNeuron: Int, val nbColNeuron: Int, datas: RDD[NamedVector], 
 
       //println("### "+iter+" - Neurons ###")
       //println(_neuronMatrix)
-
-
     }
   }
 
