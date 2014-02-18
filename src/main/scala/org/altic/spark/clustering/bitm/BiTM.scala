@@ -195,7 +195,7 @@ class BiTM(val nbRowNeuron: Int, val nbColNeuron: Int, datas: RDD[NamedVector], 
         //obs(rowBestN)(colBestN).add(elem, 1.0)
         // parcours et met à jour tous les éléments de la map
         for(i <- 0 until nbNeurons; j <- 0 until nbNeurons) {
-          val factor = topoFactors(abs(rowBestN - i) + abs(colBestN -j))
+          val factor = topoFactors(abs(rowBestN - i) + abs(colBestN - j))
           obs(i)(j).add(elem / factor, 1 / factor)
         }
       }

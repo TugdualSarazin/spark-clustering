@@ -3,7 +3,7 @@ package org.altic.spark.clustering.bitm
 import org.apache.log4j.PropertyConfigurator
 import org.apache.spark.SparkContext
 import org.apache.spark.util.Vector
-import org.altic.spark.clustering.utils.DataGenerator
+import org.altic.spark.clustering.utils.{NamedVector, DataGenerator}
 
 //object RunBiTM extends App {
 object RunBiTM {
@@ -37,9 +37,9 @@ object RunBiTM {
   //val arrDatas = Array(Vector(Array(1.0, 1.1)), Vector(Array(2.0, 2.1)))
   //val arrDatas = Array.tabulate(dataNbObs)(i => new Vector(Array.tabulate(dataNbVars)(j => i*20+j+10)))
   //val arrDatas = Array.tabulate(dataNbObs)(i => new AffectedVector(1, Array.tabulate(dataNbVars)(j => 1)))
-  val datas = sc.parallelize(arrDatas, 6)
+  //val datas = sc.parallelize(arrDatas, 6)
 
-  //val datas = sc.textFile("/home/tug/pyImg/lena.rand.data").map(line => new Vector(line.split("\t").map(_.toDouble)))
+  val datas = sc.textFile("/home/tug/ScalaProjects/spark-clustering/pyImg/lena/lena.data").map(line => new NamedVector(line.split("\t").map(_.toDouble), 0))
   //val datas = sc.textFile("/home/tug/pyImg/randImg.4colors.data").map(line => new Vector(line.split("\t").map(_.toDouble)))
 
 

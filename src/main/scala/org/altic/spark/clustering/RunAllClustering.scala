@@ -5,10 +5,11 @@ import org.apache.spark.util.Vector
 import org.apache.spark.rdd.RDD
 import org.apache.log4j.PropertyConfigurator
 import akka.util.Duration
-import org.altic.spark.clustering.utils.DataGenerator
+import org.altic.spark.clustering.utils.{DataGen, DataGenerator}
 import org.altic.spark.clustering.som.SomTrainerB
 import org.altic.spark.clustering.bitm.{BiTM, Croeuc}
 import java.util.concurrent.TimeUnit._
+import scala.math.max
 
 /**
  * Company : Altic - LIPN
@@ -27,7 +28,7 @@ object RunAllClustering extends App {
       // scp -P 2822 /home/tug/ScalaProjects/spark-clustering/target/scala-2.9.3/spark-clustering-assembly-0.8.1-SNAPSHOT.jar tugdual@magi.univ-paris13.fr:/home/dist/tugdual/runSparkSlurm
       println("## "+args(0)+" ##")
 
-      System.setProperty("SPARK_MEM", "8g")
+      System.setProperty("spark.executor.memory", "4g")
       System.setProperty("spark.local.dir", "/tmp/spark")
 
       new SparkContext(args(0), prgName, System.getenv("SPARK_HOME"), Seq(System.getenv("SPARK_RUN_JAR")))
@@ -41,26 +42,31 @@ object RunAllClustering extends App {
   val nbRowSOM = 5
   val nbColSOM = 5
   val nbIter = 3
-  val dataNbObs = 400
-  //val dataNbObs = 40
-  val dataNbVars = 10
+  val dataNbObs = 2000000
+  //val dataNbObs = 400
+  val dataNbVars = 20
   //val dataNbVars = 2
+  val dataNbCls = 2
 
   val sc = context()
 
   // Data generation
-  val arrDatas = DataGenerator.gen2ClsNDims(dataNbObs, dataNbVars).getNamedVector
+  //val arrDatas = DataGenerator.gen2ClsNDims(dataNbObs, dataNbVars).getNamedVector
   //val arrDatas = Array(new NamedVector(Array(1.0, 1.1), 1), new NamedVector(Array(1.5, 1.6), 1), new NamedVector(Array(2.0, 2.1), 2))
   //val arrDatas = Array.tabulate(dataNbObs)(i => new Vector(Array.tabulate(dataNbVars)(j => i*20+j+10)))
   //val arrDatas = Array.tabulate(dataNbObs)(i => new AffectedVector(1, Array.tabulate(dataNbVars)(j => 1)))
-  val datas = sc.parallelize(arrDatas, 1)
+  //val datas = sc.parallelize(arrDatas, 1)
+  //val datas = DataGen.generate(sc, dataNbObs, dataNbCls, dataNbVars, sc.defaultParallelism)
+  val datas = DataGen.generate(sc, dataNbObs, dataNbCls, dataNbVars, max(dataNbObs/10000, 1))
+  datas.cache()
+  datas.count()
 
 
-  println("****************\n**** CROEUC ****\n****************")
-  val croeuc = new Croeuc(nbRowSOM * nbColSOM, datas)
+  //println("****************\n**** CROEUC ****\n****************")
+  //val croeuc = new Croeuc(nbRowSOM * nbColSOM, datas)
   var startLearningTime = System.currentTimeMillis()
-  croeuc.training(nbIter)
-  val croeucDuration = Duration(System.currentTimeMillis() - startLearningTime, MILLISECONDS)
+  //croeuc.training(nbIter)
+  //val croeucDuration = Duration(System.currentTimeMillis() - startLearningTime, MILLISECONDS)
 
   println("****************\n***** BITM *****\n****************")
   val bitm = new BiTM(nbRowSOM, nbColSOM, datas)
@@ -76,8 +82,14 @@ object RunAllClustering extends App {
   som.training(datas.asInstanceOf[RDD[Vector]], somOptions, nbIter, somConvergeDist)
   val somDuration = Duration(System.currentTimeMillis() - startLearningTime, MILLISECONDS)
 
+  println("****************\n** Infos  **\n****************")
+  println("DataMatrix : "+dataNbObs+" x "+dataNbVars+" ("+dataNbCls+" class)")
+  println("Partition : "+sc.defaultParallelism)
+  println("Model : "+nbRowSOM+" x "+nbColSOM+" - "+nbIter+" iterations")
   println("****************\n** Durations  **\n****************")
-  println("Croeuc duration:"+croeucDuration)
-  println("BiTM duration:"+bitmDuration)
-  println("SOM duration:"+somDuration)
+  //println("Croeuc duration : "+croeucDuration)
+  println("BiTM duration : "+bitmDuration)
+  println("SOM duration : "+somDuration)
+
+  System.exit(0)
 }
