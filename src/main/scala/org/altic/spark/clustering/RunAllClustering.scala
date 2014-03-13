@@ -4,7 +4,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.util.Vector
 import org.apache.spark.rdd.RDD
 import org.apache.log4j.PropertyConfigurator
-import akka.util.Duration
+import scala.concurrent.duration.Duration
 import org.altic.spark.clustering.utils.{DataGen, DataGenerator}
 import org.altic.spark.clustering.som.SomTrainerB
 import org.altic.spark.clustering.bitm.{BiTM, Croeuc}
@@ -31,7 +31,8 @@ object RunAllClustering extends App {
       System.setProperty("spark.executor.memory", "4g")
       System.setProperty("spark.local.dir", "/tmp/spark")
 
-      new SparkContext(args(0), prgName, System.getenv("SPARK_HOME"), Seq(System.getenv("SPARK_RUN_JAR")))
+      //new SparkContext(args(0), prgName, System.getenv("SPARK_HOME"), Seq(System.getenv("SPARK_RUN_JAR")))
+      new SparkContext(args(0), prgName, System.getenv("SPARK_HOME"), SparkContext.jarOfObject(RunAllClustering))
     } else {
       println("## LOCAL ##")
       //PropertyConfigurator.configure("conf/log4j.properties")
@@ -39,9 +40,11 @@ object RunAllClustering extends App {
     }
   }
 
-  val nbRowSOM = 5
-  val nbColSOM = 5
-  val nbIter = 3
+  //val nbRowSOM = 5
+  val nbRowSOM = 50
+  //val nbColSOM = 5
+  val nbColSOM = 50
+  val nbIter = 30
   val dataNbObs = 2000000
   //val dataNbObs = 400
   val dataNbVars = 20

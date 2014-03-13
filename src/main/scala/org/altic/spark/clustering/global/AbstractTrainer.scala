@@ -1,9 +1,9 @@
 package org.altic.spark.clustering.global
 
-import akka.util.Duration
 import java.util.concurrent.TimeUnit._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.Vector
+import scala.concurrent.duration.{FiniteDuration, Duration}
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,7 +19,7 @@ trait AbstractTrainer extends Serializable {
   private var _converge = 1.0
   def getLastConvergence = _converge
 
-  private var _trainingDuration = Duration.Undefined
+  private var _trainingDuration = Duration.Zero
   def getLastTrainingDuration = _trainingDuration
 
   protected def initModel(dataset: RDD[Vector], modelOptions: Map[String, String])
@@ -51,7 +51,8 @@ trait AbstractTrainer extends Serializable {
       _converge = sumConvergence / datasetSize
       _it += 1
     }
-    _trainingDuration = Duration(System.currentTimeMillis() - startLearningTime, MILLISECONDS)
+
+    _trainingDuration = Duration.create(System.currentTimeMillis() - startLearningTime, MILLISECONDS)
 
     // return the model
     getModel
