@@ -20,6 +20,27 @@ import utils.IO
 object UCIClustering extends App {
 //object UCIClustering {
 
+  def context() : SparkContext = {
+    val prgName = this.getClass.getSimpleName
+    if (args.length > 0) {
+      // export SPARK_HOME=/home/tug/ScalaProjects/spark-0.8.1-incubating-bin-cdh4
+      // export SPARK_RUN_JAR=/home/tug/ScalaProjects/spark-clustering/target/scala-2.9.3/spark-clustering-assembly-0.8.1-SNAPSHOT.jar
+      // java -jar /home/tug/ScalaProjects/spark-clustering/target/scala-2.9.3/spark-clustering-assembly-0.8.1-SNAPSHOT.jar spark://localhost.localdomain:7077
+      // scp -P 2822 /home/tug/ScalaProjects/spark-clustering/target/scala-2.9.3/spark-clustering-assembly-0.8.1-SNAPSHOT.jar tugdual@magi.univ-paris13.fr:/home/dist/tugdual/runSparkSlurm
+      println("## "+args(0)+" ##")
+
+      System.setProperty("spark.executor.memory", "4g")
+      System.setProperty("spark.local.dir", "/tmp/spark")
+
+      //new SparkContext(args(0), prgName, System.getenv("SPARK_HOME"), Seq(System.getenv("SPARK_RUN_JAR")))
+      new SparkContext(args(0), prgName, System.getenv("SPARK_HOME"), SparkContext.jarOfObject(UCIClustering))
+    } else {
+      println("## LOCAL ##")
+      //PropertyConfigurator.configure("conf/log4j.properties")
+      new SparkContext("local", prgName)
+    }
+  }
+
   class Experience(val datasetDir: String, val name: String, val nbProtoRow: Int, val nbProtoCol: Int, val nbIter: Int) {
     def dir: String = datasetDir+"/"+name
     def dataPath: String = dir+"/"+name+".data"
@@ -27,7 +48,7 @@ object UCIClustering extends App {
   }
 
   PropertyConfigurator.configure("log4j.properties")
-  val sc = new SparkContext("local", this.getClass.getSimpleName)
+  val sc = context()
 
   val globalDatasetDir = "./data"
   val globalNbIter = 10
