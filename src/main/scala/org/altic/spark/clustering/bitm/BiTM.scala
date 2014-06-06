@@ -283,5 +283,9 @@ class BiTM(val nbRowNeuron: Int, val nbColNeuron: Int, datas: RDD[NamedVector], 
 
     maxByCluster.sum / dataset.count().toDouble
   }
+
+  def affectations(dataset: RDD[NamedVector]): RDD[(Int, Int)] = {
+    dataset.map(d => (d.cls, this.findBestRowNeuron(d)))
+  }
 }
 

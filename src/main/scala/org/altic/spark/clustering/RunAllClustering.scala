@@ -17,7 +17,7 @@ import scala.math.max
  * Date: 06/01/14
  * Time: 12:50
  */
-object RunAllClustering extends App {
+/*object RunAllClustering extends App {
 //object RunAllClustering {
   def context() : SparkContext = {
     val prgName = this.getClass.getSimpleName
@@ -95,4 +95,4 @@ object RunAllClustering extends App {
   println("SOM duration : "+somDuration)
 
   System.exit(0)
-}
+}*/

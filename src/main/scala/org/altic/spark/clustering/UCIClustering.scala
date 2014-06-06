@@ -7,6 +7,9 @@ import org.apache.spark.util.Vector
 import org.altic.spark.clustering.utils.SparkReader
 import org.altic.spark.clustering.bitm.{BiTM, Croeuc}
 import org.altic.spark.clustering.som.SomTrainerB
+import java.io.File
+
+import utils.IO
 
 /**
  * Company : Altic - LIPN
@@ -14,46 +17,74 @@ import org.altic.spark.clustering.som.SomTrainerB
  * Date: 07/01/14
  * Time: 12:30
  */
-//object UCIClustering extends App {
-object UCIClustering {
+object UCIClustering extends App {
+//object UCIClustering {
+
+  class Experience(val datasetDir: String, val name: String, val nbProtoRow: Int, val nbProtoCol: Int, val nbIter: Int) {
+    def dir: String = datasetDir+"/"+name
+    def dataPath: String = dir+"/"+name+".data"
+    def nbTotProto: Int = nbProtoCol * nbProtoRow
+  }
+
   PropertyConfigurator.configure("log4j.properties")
   val sc = new SparkContext("local", this.getClass.getSimpleName)
 
-  val datasetDir = "/home/tug/ScalaProjects/som_datasets/"
-  val datasetFiles = Array("Breast.data", "glass.data", "Heart.data", "HorseColic.data", /*"isolet5.data",*/
-    "LungCancer.data", "movement_libras.data", "sonar.data", "SPECTF.data")
-  //val datasetFiles = Array("isolet5.data")
-  //val datasetFiles = Array("glass.data")
+  val globalDatasetDir = "./data"
+  val globalNbIter = 10
+  val nbExp = 10
 
-  val nbRowSOM = 5
-  val nbColSOM = 5
-  val nbIter = 10
 
-  datasetFiles.foreach{file =>
-    println("\n***** "+file)
+  // Note ; map height/width = round(((5*dlen)^0.54321)^0.5)
+  //        dlen is the number of row of the dataset
+  val experiences = Array(
+    new Experience(globalDatasetDir, "Glass", 7, 7, globalNbIter),
+    new Experience(globalDatasetDir, "CancerWpbcRet", 7, 7, globalNbIter),
+    new Experience(globalDatasetDir, "SonarMines", 7, 7, globalNbIter),
+    new Experience(globalDatasetDir, "Heart", 7, 7, globalNbIter),
+    new Experience(globalDatasetDir, "Spectf1", 8, 8, globalNbIter),
+    new Experience(globalDatasetDir, "MovementLibras", 8, 8, globalNbIter),
+    new Experience(globalDatasetDir, "Breast", 9, 9, globalNbIter),
+    new Experience(globalDatasetDir, "HorseColic", 7, 7, globalNbIter),
+    new Experience(globalDatasetDir, "Isolet5", 11, 11, globalNbIter),
+    new Experience(globalDatasetDir, "Waveform", 16, 16, globalNbIter),
+    new Experience(globalDatasetDir, "LetterRecognition", 23, 23, globalNbIter),
+    new Experience(globalDatasetDir, "Shuttle", 28, 28, globalNbIter),
+    new Experience(globalDatasetDir, "Covtype", 57, 57, globalNbIter)
+  )
+
+  experiences.foreach{exp =>
+    // Delete old results
+    cleanResults(exp)
+
     // Read data from file
-    val datas = SparkReader.parse(sc, datasetDir+file, ";")
+    println("\n***** READ : "+exp.name)
+    val datas = SparkReader.parse(sc, exp.dataPath, " ").cache()
 
-    //println("****************\n**** CROEUC ****\n****************")
-    val croeuc = new Croeuc(nbRowSOM * nbColSOM, datas)
-    croeuc.training(nbIter)
+    for (numExp <- 1 to nbExp) {
+      println("\n***** CROEUC : "+exp.name+" ("+numExp+"/"+nbExp+")")
+      val croeuc = new Croeuc(exp.nbTotProto, datas)
+      croeuc.training(exp.nbIter)
 
-    //println("****************\n***** BITM *****\n****************")
-    val bitm = new BiTM(nbRowSOM, nbColSOM, datas)
-    bitm.training(nbIter)
+      println("\n***** BiTM : "+exp.name+" ("+numExp+"/"+nbExp+")")
+      val bitm = new BiTM(exp.nbProtoRow, exp.nbProtoCol, datas)
+      bitm.training(exp.nbIter)
 
-    //println("****************\n***** SOM  *****\n****************")
-    val som = new SomTrainerB
-    val somOptions = Map("clustering.som.nbrow" -> nbRowSOM.toString, "clustering.som.nbcol" -> nbColSOM.toString)
-    val somConvergeDist = -0.1
-    som.training(datas.asInstanceOf[RDD[Vector]], somOptions, nbIter, somConvergeDist)
+      println("\n***** SOM : "+exp.name+" ("+numExp+"/"+nbExp+")")
+      val som = new SomTrainerB
+      val somOptions = Map("clustering.som.nbrow" -> exp.nbProtoRow.toString, "clustering.som.nbcol" -> exp.nbProtoCol.toString)
+      val somConvergeDist = -0.1
+      som.training(datas.asInstanceOf[RDD[Vector]], somOptions, exp.nbIter, somConvergeDist)
 
-    println("** Croeuc purity : "+croeuc.purity(datas))
-    println("** BiTM purity : "+bitm.purity(datas))
-    println("** SOM purity : "+som.purity(datas))
+      // Save results
+      croeuc.affectations(datas).map(d => d._1+" "+d._2).saveAsTextFile(exp.dir+"/"+exp.name+".clustering.croeuc_"+exp.nbTotProto+"-"+numExp)
+      bitm.affectations(datas).map(d => d._1+" "+d._2).saveAsTextFile(exp.dir+"/"+exp.name+".clustering.bitm_"+exp.nbProtoRow+"x"+exp.nbProtoCol+"-"+numExp)
+      som.affectations(datas).map(d => d._1+" "+d._2).saveAsTextFile(exp.dir+"/"+exp.name+".clustering.som_"+exp.nbProtoRow+"x"+exp.nbProtoCol+"-"+numExp)
+    }
+  }
 
-    //println("** Croeuc quant errors : "+croeuc.quantErrors.reverse.mkString("(", ",", ")"))
-    //println("** BiTM quant errors : "+bitm.quantErrors.reverse.mkString("(", ",", ")"))
-    //println("** SOM quant errors : "+som.quantErrors.reverse.mkString("(", ",", ")"))
+  def cleanResults(exp: Experience) {
+    val resultDirs = new File(exp.dir).listFiles.filter(_.getName.startsWith(exp.name+".clustering"))
+    resultDirs.foreach(IO.delete)
+
   }
 }

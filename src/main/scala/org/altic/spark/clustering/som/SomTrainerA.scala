@@ -33,7 +33,9 @@ class SomTrainerA extends AbstractTrainer {
 
     val mapSize = nbRow * nbCol
     // todo : replace random = 42
-    val selectedDatas = dataset.takeSample(false, mapSize, new Random().nextInt())
+    val selectedDatas = {
+      dataset.takeSample(withReplacement = false, mapSize, new Random().nextInt())
+    }
 
     // todo : Check /nbCol et %nbCOl
     val neuronMatrix = Array.tabulate(mapSize)(id => new SomNeuron(id, id/nbCol, id%nbCol, selectedDatas(id)))
@@ -63,7 +65,7 @@ class SomTrainerA extends AbstractTrainer {
     }
 
     // Update model and process convergence distance
-    concatObs.map(_somModel.update(_)).sum
+    concatObs.map(_somModel.update).sum
   }
 
   protected def processT(maxIt:Int, currentIt:Int) = maxIt.toFloat - currentIt
@@ -121,5 +123,9 @@ class SomTrainerA extends AbstractTrainer {
       .collect()
 
     maxByCluster.sum / dataset.count().toDouble
+  }
+
+  def affectations(dataset: RDD[NamedVector]): RDD[(Int, Int)] = {
+    dataset.map(d => (d.cls, _somModel.findClosestPrototype(d).id))
   }
 }
