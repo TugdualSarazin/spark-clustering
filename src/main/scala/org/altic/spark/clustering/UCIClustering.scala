@@ -23,10 +23,10 @@ object UCIClustering extends App {
   def context() : SparkContext = {
     val prgName = this.getClass.getSimpleName
     if (args.length > 0) {
-      // export SPARK_HOME=/home/tug/ScalaProjects/spark-0.8.1-incubating-bin-cdh4
-      // export SPARK_RUN_JAR=/home/tug/ScalaProjects/spark-clustering/target/scala-2.9.3/spark-clustering-assembly-0.8.1-SNAPSHOT.jar
-      // java -jar /home/tug/ScalaProjects/spark-clustering/target/scala-2.9.3/spark-clustering-assembly-0.8.1-SNAPSHOT.jar spark://localhost.localdomain:7077
-      // scp -P 2822 /home/tug/ScalaProjects/spark-clustering/target/scala-2.9.3/spark-clustering-assembly-0.8.1-SNAPSHOT.jar tugdual@magi.univ-paris13.fr:/home/dist/tugdual/runSparkSlurm
+      // export SPARK_HOME=/home/tug/ScalaProjects/spark-0.9.0-incubating-bin-cdh4
+      // export SPARK_CLUSTERING=/home/tug/ScalaProjects/spark-clustering
+      // export SPARK_RUN_JAR=/home/tug/ScalaProjects/spark-clustering/target/scala-2.10/spark-clustering-assembly-1.0.jar
+      // java -jar /home/tug/ScalaProjects/spark-clustering/target/scala-2.10/spark-clustering-assembly-1.0.jar spark://localhost.localdomain:7077
       println("## "+args(0)+" ##")
 
       System.setProperty("spark.executor.memory", "4g")
@@ -50,7 +50,12 @@ object UCIClustering extends App {
   PropertyConfigurator.configure("log4j.properties")
   val sc = context()
 
-  val globalDatasetDir = "./data"
+  var globalDatasetDir = "./data"
+  // Magi Cluster mode
+  if (System.getenv("SPARK_CLUSTERING") != null) {
+    globalDatasetDir = System.getenv("SPARK_CLUSTERING")+"/data"
+  }
+
   val globalNbIter = 10
   val nbExp = 10
 
