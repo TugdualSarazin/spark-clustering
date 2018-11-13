@@ -1,3 +1,7 @@
+!!! This project is now maintained by Clustering4Ever !!!
+================
+https://github.com/Clustering4Ever/Clustering4Ever
+
 spark-clustering
 ================
 
